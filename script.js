@@ -660,12 +660,12 @@ function exportToPDF() {
         doc.setFontSize(18);
         doc.setFont(undefined, 'bold');
         doc.setTextColor(40);
-        doc.text('Relatório de Patrimônio', pageWidth / 2, y, { align: 'center' });
+        doc.text('Relatório de Patrimônios', pageWidth / 2, y, { align: 'center' });
 
         y += 10;
         doc.setFontSize(10);
         doc.setFont(undefined, 'normal');
-        const hoje = new Date();
+        // const hoje = new Date();
         const meses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
         const dataFormatada = `${hoje.getDate()} de ${meses[hoje.getMonth()]} de ${hoje.getFullYear()} às ${String(hoje.getHours()).padStart(2, '0')}:${String(hoje.getMinutes()).padStart(2, '0')}`;
         doc.text(`Gerado em: ${dataFormatada}`, pageWidth / 2, y, { align: 'center' });
