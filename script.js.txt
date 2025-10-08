@@ -1,377 +1,345 @@
 /**
- * ==== LEITOR DE QR CODE PATRIMÔNIO ====
- * Sistema completo para leitura de QR Codes patrimoniais
+ * ==== Leitor de Qr Codes Patrimônios ====
+ * Sistema para leitura de QR Codes patrimoniais
  * com funcionalidades de exportação para Excel e PDF
+ * e persistência via localStorage
  */
 
-// ==== VARIÁVEIS GLOBAIS ====
-let html5QrCode = null;
-let isScanning = false;
-let patrimonioData = [];
-let editModal = null;
+// Variáveis globais do sistema
+let html5QrCode = null; // Instância do leitor de QR Code
+let isScanning = false; // Estado atual da câmera (ativa/inativa)
+let patrimonioData = []; // Array com todos os patrimônios escaneados
+let editModal = null;   // Referência ao modal de edição
 
-// ==== ELEMENTOS DOM ====
+// Configurações de paginação da tabela de patrimônios
+const itemsPerPage = 5; // Número de itens exibidos por página
+let currentPage = 1; // Página atual da tabela
+let searchTerm = ''; // Termo de busca para filtrar patrimônios
+
+// Objeto com referências aos elementos HTML do DOM sem múltiplas chamadas getElementById
 const elements = {
-    startBtn: document.getElementById('startBtn'),
-    stopBtn: document.getElementById('stopBtn'),
-    clearBtn: document.getElementById('clearBtn'),
-    exportExcelBtn: document.getElementById('exportExcelBtn'),
-    exportPdfBtn: document.getElementById('exportPdfBtn'),
-    dataTableBody: document.getElementById('dataTableBody'),
-    totalItems: document.getElementById('totalItems'),
-    alertContainer: document.getElementById('alertContainer'),
-    editModal: document.getElementById('editModal'),
-    editForm: document.getElementById('editForm'),
-    saveEditBtn: document.getElementById('saveEditBtn')
+    startBtn: document.getElementById('startBtn'), // Botão para iniciar a câmera
+    stopBtn: document.getElementById('stopBtn'), // Botão para parar a câmera
+    clearBtn: document.getElementById('clearBtn'), // Botão para limpar todos os dados
+    exportExcelBtn: document.getElementById('exportExcelBtn'), // Botão para exportar para Excel
+    exportPdfBtn: document.getElementById('exportPdfBtn'), // Botão para exportar para PDF
+    dataTableBody: document.getElementById('dataTableBody'), // Corpo da tabela de patrimônios
+    totalItems: document.getElementById('totalItems'), // Elemento que exibe o total de itens
+    alertContainer: document.getElementById('alertContainer'), // Container para exibir alertas
+    editModal: document.getElementById('editModal'), // Modal de edição de patrimônio
+    editForm: document.getElementById('editForm'), // Formulário de edição
+    saveEditBtn: document.getElementById('saveEditBtn'), // Botão para salvar edição
+    searchInput: document.getElementById('searchInput') // Campo de busca/filtro
 };
 
-// ==== INICIALIZAÇÃO ====
+// Inicialização do sistema quando o DOM estiver completamente carregado
 document.addEventListener('DOMContentLoaded', function () {
-    console.log('🚀 Iniciando aplicação Leitor QR Code Patrimônio');
-
-    // Inicializar modal do Bootstrap
-    editModal = new bootstrap.Modal(elements.editModal);
-
-    // Configurar event listeners
-    setupEventListeners();
-
-    // Verificar suporte à câmera
-    checkCameraSupport();
-
-    // Atualizar interface inicial
-    updateUI();
-
-    showAlert('Sistema iniciado com sucesso!', 'success');
+    loadDataFromStorage(); // Carrega dados salvos do localStorage
+    editModal = new bootstrap.Modal(elements.editModal); // Inicializa modal de edição
+    setupEventListeners(); // Configura todos os eventos de clique e interação
+    checkCameraSupport(); // Verifica se o navegador suporta câmera
+    updateUI(); // Atualiza interface com dados carregados
+    updateTable(); // Renderiza tabela de patrimônios
+    setupResponsiveTable(); // Configura responsividade da tabela
+    showAlert('Sistema iniciado com sucesso!', 'success'); // Exibe mensagem de sucesso
 });
 
-// ==== CONFIGURAÇÃO DE EVENT LISTENERS ====
+// Persistência
+// Salva os dados de patrimônio no localStorage do navegador
+function saveDataToStorage() {
+    localStorage.setItem('patrimonioData', JSON.stringify(patrimonioData));
+}
+
+// Carrega os dados salvos do localStorage e garante que cada item tenha um ID único
+function loadDataFromStorage() {
+    const saved = localStorage.getItem('patrimonioData');
+    if (saved) {
+        try {
+            // Converte string JSON em array de objetos
+            patrimonioData = JSON.parse(saved);
+            // Garante que todos os itens tenham um ID único para edição/exclusão
+            patrimonioData.forEach(item => {
+                if (item.id === undefined) item.id = Date.now() + Math.random();
+            });
+        } catch (e) {
+            // Em caso de erro na leitura, inicializa array vazio
+            console.error('Erro ao carregar dados', e);
+            patrimonioData = [];
+        }
+    }
+}
+
+// Configura todos os eventos de clique e interação dos botões e formulários
 function setupEventListeners() {
-    // Botões de controle do scanner
+    // Botões de controle da câmera
     elements.startBtn.addEventListener('click', startScanning);
     elements.stopBtn.addEventListener('click', stopScanning);
 
-    // Botões de ação
+    // Botões de gerenciamento de dados
     elements.clearBtn.addEventListener('click', clearData);
     elements.exportExcelBtn.addEventListener('click', exportToExcel);
     elements.exportPdfBtn.addEventListener('click', exportToPDF);
 
-    // Modal de edição
+    // Botão de salvar edição no modal
     elements.saveEditBtn.addEventListener('click', saveEdit);
 
-    // Fechar alertas automaticamente
+    // Campo de busca/filtro na tabela
+    elements.searchInput.addEventListener('input', handleSearch);
+
+    // Evento para fechar alertas clicando no botão X
     document.addEventListener('click', function (e) {
         if (e.target.classList.contains('btn-close')) {
             e.target.closest('.alert').remove();
         }
     });
+
+    // Formulário de adição manual de patrimônio
+    document.getElementById('manualAddForm').addEventListener('submit', handleManualAdd);
 }
 
-// ==== VERIFICAÇÃO DE SUPORTE À CÂMERA ====
-function checkCameraSupport() {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        showAlert('Seu navegador não suporta acesso à câmera. Use um navegador mais recente.', 'danger');
-        elements.startBtn.disabled = true;
-        return false;
-    }
-    return true;
-}
-
-// ==== FUNÇÕES DO SCANNER QR CODE ====
-
-/**
- * Inicia o scanner de QR Code
- */
-async function startScanning() {
-    if (isScanning) return;
-
-    try {
-        showAlert('Iniciando câmera...', 'info');
-
-        // Configurações do scanner
-        const config = {
-            fps: 10,
-            qrbox: { width: 250, height: 250 },
-            aspectRatio: 1.0,
-            disableFlip: false,
-            // Adicionando restrições de vídeo para melhorar a qualidade da imagem
-            videoConstraints: {
-                // Tentar obter uma resolução alta para melhor leitura
-                width: { ideal: 1280 },
-                height: { ideal: 720 },
-                // Preferir a câmera traseira (environment), com fallback para qualquer câmera
-                facingMode: "environment",
-                // Tentativa de forçar o foco contínuo (se suportado pelo navegador)
-                advanced: [{ focusMode: "continuous" }]
-            }
-        };
-
-        // Inicializar o scanner
-        html5QrCode = new Html5Qrcode("qr-reader");
-
-        // Iniciar o scanner
-        // O ID da câmera será 'environment' ou o ID da câmera padrão,
-        // mas a configuração de videoConstraints já define a preferência por 'environment'
-        await html5QrCode.start(
-            { facingMode: "environment" }, // Usar restrição de facingMode para iniciar
-            config,
-            onScanSuccess,
-            onScanFailure
-        );
-
-        isScanning = true;
-        updateScannerUI(true);
-        showAlert('Scanner iniciado com sucesso! Aponte para um QR Code.', 'success');
-
-    } catch (error) {
-        console.error('Erro ao iniciar scanner:', error);
-
-        // Mensagem de erro mais específica para falha de câmera
-        let errorMessage = `Erro ao acessar câmera: ${error.message}`;
-        if (error.message.includes('No suitable camera found')) {
-            errorMessage = 'Nenhuma câmera adequada encontrada. Verifique as permissões do navegador.';
-        } else if (error.message.includes('Permission denied')) {
-            errorMessage = 'Permissão de câmera negada. Habilite o acesso nas configurações do navegador.';
-        }
-
-        showAlert(errorMessage, 'danger');
-        updateScannerUI(false);
-    }
-}
-
-/**
- * Para o scanner de QR Code
- */
-async function stopScanning() {
-    if (!isScanning || !html5QrCode) return;
-
-    try {
-        await html5QrCode.stop();
-        html5QrCode.clear();
-        html5QrCode = null;
-        isScanning = false;
-        updateScannerUI(false);
-        showAlert('Scanner parado.', 'info');
-
-    } catch (error) {
-        console.error('Erro ao parar scanner:', error);
-        showAlert('Erro ao parar scanner.', 'warning');
-    }
-}
-
-// Formulário para adicionar dados manualmente
-const manualAddForm = document.getElementById('manualAddForm');
-
-manualAddForm.addEventListener('submit', function (event) {
+// Processa adição manual de patrimônio através do formulário
+// Valida campos obrigatórios e adiciona novo registro à tabela
+function handleManualAdd(event) {
     event.preventDefault();
-
-    // Capturar valores do formulário
     const patrimonio = document.getElementById('inputPatrimonio').value.trim();
     const item = document.getElementById('inputItem').value.trim();
     const coordenacao = document.getElementById('inputCoordenacao').value.trim();
     const servidor = document.getElementById('inputServidor').value.trim();
     const coordenador = document.getElementById('inputCoordenador').value.trim();
 
-    // Validar campos obrigatórios
+    // Valida se todos os campos foram preenchidos
     if (!patrimonio || !item || !coordenacao || !servidor || !coordenador) {
-        showAlert('Por favor, preencha todos os campos.', 'warning');
+        showAlert('Preencha todos os campos.', 'warning');
         return;
     }
 
-    // Criar objeto de dados
+    /* Cria objeto com os dados do novo patrimônio
+        Gera ID único usando timestamp + número aleatório para evitar duplicatas
+        dataHora registra momento exato da adição no formato brasileiro */
     const newData = {
-        patrimonio: patrimonio,
-        item: item,
-        coordenacao: coordenacao,
-        servidor: servidor,
-        coordenador: coordenador,
+        patrimonio,
+        item,
+        coordenacao,
+        servidor,
+        coordenador,
         dataHora: new Date().toLocaleString('pt-BR'),
-        id: Date.now()
+        id: Date.now() + Math.random()
     };
 
-    // Adicionar dados
+    // Adiciona patrimônio e limpa formulário
     addPatrimonioData(newData);
+    event.target.reset();
+    showAlert('Dados adicionados manualmente!', 'success');
+}
 
-    // Resetar formulário
-    manualAddForm.reset();
+// Scanner
+function checkCameraSupport() {
+    // Verifica se o navegador possui suporte para acessar dispositivos de mídia (câmera)
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        showAlert('Seu navegador não suporta acesso à câmera.', 'danger');
+        elements.startBtn.disabled = true;
+        return false;
+    }
+    // Retorna true se o navegador suporta câmera
+    return true;
+}
 
-    showAlert('Dados adicionados manualmente com sucesso!', 'success');
-});
-/**
- * Callback executado quando um QR Code é lido com sucesso
- */
-function onScanSuccess(decodedText, decodedResult) {
-    console.log('QR Code lido:', decodedText);
+// Inicia o scanner de QR Code usando a câmera do dispositivo
+async function startScanning() {
+    // Evita iniciar múltiplas instâncias do scanner
+    if (isScanning) return;
+    try {
+        // Configurações do scanner: FPS, tamanho da área de leitura e qualidade de vídeo
+        const config = {
+            fps: 10,
+            qrbox: { width: 250, height: 250 },
+            aspectRatio: 1.0,
+            disableFlip: false,
+            videoConstraints: {
+                width: { ideal: 1280 },
+                height: { ideal: 720 },
+                facingMode: "environment",
+                advanced: [{ focusMode: "continuous" }]
+            }
+        };
 
-    // Processar os dados do QR Code
+        // Inicializa o scanner e começa a capturar vídeo da câmera traseira
+        html5QrCode = new Html5Qrcode("qr-reader");
+        await html5QrCode.start(
+            { facingMode: "environment" },
+            config,
+            onScanSuccess,
+            onScanFailure
+        );
+        // Atualiza estado e interface para indicar que o scanner está ativo
+        isScanning = true;
+        updateScannerUI(true);
+        document.getElementById('cameraStatus').textContent = 'Conectado';
+        document.getElementById('cameraStatus').className = 'camera-status connected';
+        showAlert('Scanner iniciado!', 'success');
+    } catch (error) {
+        // Trata erros de acesso à câmera (permissão negada, câmera indisponível, etc)
+        console.error('Erro ao iniciar scanner:', error);
+        let msg = 'Erro ao acessar câmera.';
+        if (error.message.includes('Permission denied')) msg = 'Permissão de câmera negada.';
+        showAlert(msg, 'danger');
+        updateScannerUI(false);
+        document.getElementById('cameraStatus').textContent = 'Erro';
+        document.getElementById('cameraStatus').className = 'camera-status disconnected';
+    }
+}
+
+// Para a leitura do QR Code e desconecta a câmera
+async function stopScanning() {
+    // Verifica se o scanner está ativo antes de parar
+    if (!isScanning || !html5QrCode) return;
+
+    try {
+        // Para a leitura da câmera e limpa o scanner
+        await html5QrCode.stop();
+        html5QrCode.clear();
+        html5QrCode = null;
+        isScanning = false;
+
+        // Atualiza a interface para refletir o estado desconectado
+        updateScannerUI(false);
+        document.getElementById('cameraStatus').textContent = 'Desconectado';
+        document.getElementById('cameraStatus').className = 'camera-status disconnected';
+        showAlert('Scanner parado.', 'info');
+    } catch (error) {
+        // Trata erros ao tentar parar o scanner
+        console.error('Erro ao parar scanner:', error);
+        showAlert('Erro ao parar scanner.', 'warning');
+    }
+}
+
+// Função chamada quando um QR Code é lido com sucesso
+function onScanSuccess(decodedText) {
+    // Processa o texto do QR Code e extrai os dados do patrimônio
     const parsedData = parseQRCodeData(decodedText);
 
+    // Se os dados forem válidos, adiciona à lista e notifica o usuário
     if (parsedData) {
-        // Adicionar aos dados
         addPatrimonioData(parsedData);
-
-        // Feedback visual e sonoro
         showAlert(`QR Code lido: ${parsedData.patrimonio}`, 'success');
-
-        // Vibração se suportada
-        if (navigator.vibrate) {
-            navigator.vibrate(200);
-        }
-
+        // Vibra o dispositivo para feedback tátil (se disponível)
+        if (navigator.vibrate) navigator.vibrate(200);
     } else {
-        showAlert('QR Code não está no formato esperado.', 'warning');
+        // Notifica o usuário caso o QR Code não seja válido
+        showAlert('QR Code inválido.', 'warning');
     }
 }
 
-/**
- * Callback executado quando há falha na leitura
- */
+// Função chamada quando há falha na leitura do QR Code
+// Mantida silenciosa para não poluir o console com erros de leitura contínua
 function onScanFailure(error) {
-    // Não mostrar erros de falha de leitura (muito frequentes)
-    // console.log('Falha na leitura:', error);
+
 }
 
-// ==== PROCESSAMENTO DE DADOS ====
-
-/**
- * Faz o parse dos dados do QR Code
- * Formato esperado:
- * Patrimônio: 0000
- * Item: Monitor de LED 19,5''
- * Coordenação: COSP
- * Servidor (a): Fulano de Tal
- * Coordenador: Fulano da Silva
- */
+// Função que processa o texto do QR Code e extrai os dados do patrimônio
+// Retorna um objeto com os dados extraídos ou null se houver erro ou dados incompletos
 function parseQRCodeData(qrText) {
     try {
-        const lines = qrText.split('\n').map(line => line.trim()).filter(line => line);
+        // Divide o texto em linhas e remove espaços em branco
+        const lines = qrText.split('\n').map(l => l.trim()).filter(l => l);
         const data = {};
 
+        // Percorre cada linha buscando os campos esperados
         for (const line of lines) {
-            if (line.includes('Patrimônio:')) {
-                data.patrimonio = line.split('Patrimônio:')[1].trim();
-            } else if (line.includes('Item:')) {
-                data.item = line.split('Item:')[1].trim();
-            } else if (line.includes('Coordenação:')) {
-                data.coordenacao = line.split('Coordenação:')[1].trim();
-            } else if (line.includes('Servidor') && line.includes(':')) {
-                data.servidor = line.split(':')[1].trim();
-            } else if (line.includes('Coordenador:')) {
-                data.coordenador = line.split('Coordenador:')[1].trim();
-            }
+            if (line.startsWith('Patrimônio:')) data.patrimonio = line.split('Patrimônio:')[1].trim();
+            else if (line.startsWith('Item:')) data.item = line.split('Item:')[1].trim();
+            else if (line.startsWith('Coordenação:')) data.coordenacao = line.split('Coordenação:')[1].trim();
+            else if (line.includes('Servidor') && line.includes(':')) data.servidor = line.split(':')[1].trim();
+            else if (line.startsWith('Coordenador:')) data.coordenador = line.split('Coordenador:')[1].trim();
         }
 
-        // Verificar se todos os campos obrigatórios estão presentes
+        // Valida se todos os campos obrigatórios foram encontrados
         if (data.patrimonio && data.item && data.coordenacao && data.servidor && data.coordenador) {
             data.dataHora = new Date().toLocaleString('pt-BR');
-            data.id = Date.now(); // ID único baseado em timestamp
+            data.id = Date.now() + Math.random();
             return data;
         }
-
         return null;
-
-    } catch (error) {
-        console.error('Erro ao processar QR Code:', error);
+    } catch (e) {
         return null;
     }
 }
 
-/**
- * Adiciona dados patrimoniais à lista
- */
+// Adiciona novo patrimônio ao sistema, verificando duplicatas antes de inserir
 function addPatrimonioData(data) {
-    // Verificar se já existe (evitar duplicatas)
+    // Verifica se o patrimônio já existe na lista
     const exists = patrimonioData.find(item =>
-        item.patrimonio === data.patrimonio &&
-        item.item === data.item
+        item.patrimonio === data.patrimonio && item.item === data.item
     );
-
     if (exists) {
-        showAlert(`Patrimônio ${data.patrimonio} já foi registrado.`, 'warning');
+        showAlert(`Patrimônio ${data.patrimonio} já registrado.`, 'warning');
         return;
     }
-
-    // Adicionar aos dados
+    // Adiciona o novo patrimônio e atualiza o sistema
     patrimonioData.push(data);
-
-    // Atualizar interface
+    saveDataToStorage();
     updateTable();
     updateUI();
-
-    console.log('Dados adicionados:', data);
 }
 
-// ==== INTERFACE DO USUÁRIO ====
-
-/**
- * Atualiza a interface do scanner
- */
+// Atualiza o estado dos botões de controle do scanner (ativa/desativa conforme o estado de escaneamento)
 function updateScannerUI(scanning) {
     elements.startBtn.disabled = scanning;
     elements.stopBtn.disabled = !scanning;
-
-    if (scanning) {
-        elements.startBtn.innerHTML = '<i class="bi bi-play-circle"></i> Iniciando...';
-        elements.stopBtn.innerHTML = '<i class="bi bi-stop-circle"></i> Parar Scanner';
-    } else {
-        elements.startBtn.innerHTML = '<i class="bi bi-play-circle"></i> Iniciar Scanner';
-        elements.stopBtn.innerHTML = '<i class="bi bi-stop-circle"></i> Parar Scanner';
-    }
 }
 
-/**
- * Atualiza a interface geral
- */
-function updateUI() {
-    const hasData = patrimonioData.length > 0;
-
-    // Atualizar contador
-    elements.totalItems.textContent = patrimonioData.length;
-
-    // Habilitar/desabilitar botões
-    elements.clearBtn.disabled = !hasData;
-    elements.exportExcelBtn.disabled = !hasData;
-    elements.exportPdfBtn.disabled = !hasData;
-
-    // Atualizar texto dos botões de exportação
-    if (hasData) {
-        elements.exportExcelBtn.innerHTML = `<i class="bi bi-file-earmark-excel"></i> Exportar Excel (${patrimonioData.length})`;
-        elements.exportPdfBtn.innerHTML = `<i class="bi bi-file-earmark-pdf"></i> Exportar PDF (${patrimonioData.length})`;
-    } else {
-        elements.exportExcelBtn.innerHTML = '<i class="bi bi-file-earmark-excel"></i> Exportar Excel';
-        elements.exportPdfBtn.innerHTML = '<i class="bi bi-file-earmark-pdf"></i> Exportar PDF';
-    }
+// Realiza a busca na tabela de patrimônios filtrando pelos termos digitados
+function handleSearch() {
+    searchTerm = elements.searchInput.value.toLowerCase();
+    currentPage = 1;
+    updateTable();
 }
 
-/**
- * Atualiza a tabela de dados
- */
+// Atualiza a tabela de patrimônios com filtros de busca e paginação
+// Renderiza as linhas da tabela com os dados filtrados e aplica responsividade para telas pequenas
 function updateTable() {
-    const termo = document.getElementById('searchInput').value.toLowerCase();
-    const filtrados = patrimonioData.filter(item =>
-        item.patrimonio.toLowerCase().includes(termo)
-    );
+    // Filtra os dados baseado no termo de busca
+    let filtered = patrimonioData;
+    if (searchTerm) {
+        filtered = patrimonioData.filter(item =>
+            Object.values(item).some(val =>
+                typeof val === 'string' && val.toLowerCase().includes(searchTerm)
+            )
+        );
+    }
 
+    // Calcula a paginação dos dados filtrados
+    const total = filtered.length;
     const start = (currentPage - 1) * itemsPerPage;
     const end = start + itemsPerPage;
-    const pageData = filtrados.slice(start, end);
+    const pageData = filtered.slice(start, end);
 
+    // Renderiza as linhas da tabela
     elements.dataTableBody.innerHTML = '';
-    pageData.forEach((item, index) => {
+    pageData.forEach((item, idx) => {
         const row = document.createElement('tr');
         row.className = 'fade-in new-row';
+        const globalIndex = start + idx + 1;
+
+        // Verificar se estamos em uma tela pequena para aplicar dtr-control
+        const isSmallScreen = window.innerWidth < 576;
+
+        // Monta o HTML da linha com todos os dados do patrimônio
         row.innerHTML = `
-            <td><strong>${start + index + 1}</strong></td>
-            <td><span class="badge bg-primary">${item.patrimonio}</span></td>
-            <td>${item.item}</td>
-            <td><span class="badge bg-secondary">${item.coordenacao}</span></td>
-            <td>${item.servidor}</td>
-            <td>${item.coordenador}</td>
-            <td><small class="text-muted">${item.dataHora}</small></td>
-            <td>
-                <button class="btn btn-sm btn-outline-primary action-btn" onclick="editItem(${start + index})" title="Editar">
+            <td class="${isSmallScreen ? 'dtr-control' : ''}" data-label="Nº" ${isSmallScreen ? 'onclick="toggleRowDetails(this)"' : ''}>
+                <strong>${globalIndex}</strong>
+            </td>
+            <td data-label="Patrimônio"><span class="badge bg-primary">${item.patrimonio}</span></td>
+            <td data-label="Item">${item.item}</td>
+            <td data-label="Coordenação"><span class="badge bg-secondary">${item.coordenacao}</span></td>
+            <td data-label="Servidor(a)">${item.servidor}</td>
+            <td data-label="Coordenador">${item.coordenador}</td>
+            <td data-label="Data/Hora"><small class="text-muted">${item.dataHora}</small></td>
+            <td data-label="Ações">
+                <button class="btn btn-sm btn-outline-primary action-btn" onclick="editItem(${patrimonioData.indexOf(item)})" title="Editar">
                     <i class="bi bi-pencil"></i>
                 </button>
-                <button class="btn btn-sm btn-outline-danger action-btn" onclick="deleteItem(${start + index})" title="Excluir">
+                <button class="btn btn-sm btn-outline-danger action-btn" onclick="deleteItem(${patrimonioData.indexOf(item)})" title="Excluir">
                     <i class="bi bi-trash"></i>
                 </button>
             </td>
@@ -380,42 +348,155 @@ function updateTable() {
         setTimeout(() => row.classList.remove('new-row'), 500);
     });
 
-    renderPagination(filtrados.length);
+    // Atualiza os controles de paginação
+    renderPagination(total);
 }
 
-// ==== FUNÇÕES DE EDIÇÃO ====
+// Função para expandir/recolher detalhes da linha em telas pequenas
+function toggleRowDetails(element) {
+    const row = element.closest('tr');
+    const isExpanded = element.classList.contains('expanded');
 
-/**
- * Abre modal para editar item
- */
+    if (isExpanded) {
+        // Recolher detalhes
+        element.classList.remove('expanded');
+        const details = row.querySelector('.dtr-details');
+        if (details) details.remove();
+    } else {
+        // Expandir detalhes
+        element.classList.add('expanded');
+
+        // Remover qualquer detalhe existente
+        const existingDetails = row.querySelector('.dtr-details');
+        if (existingDetails) existingDetails.remove();
+
+        // Criar novo elemento de detalhes
+        const details = document.createElement('div');
+        details.className = 'dtr-details';
+
+        // Obter dados da linha
+        const cells = row.querySelectorAll('td');
+        const labels = ['Patrimônio', 'Item', 'Coordenação', 'Servidor(a)', 'Coordenador', 'Data/Hora'];
+
+        // Adicionar detalhes (pular primeira célula que é o número e última que são ações)
+        for (let i = 1; i < cells.length - 1; i++) {
+            const detailRow = document.createElement('div');
+            detailRow.className = 'dtr-details-row';
+            detailRow.innerHTML = `
+                <span class="dtr-title">${labels[i - 1]}:</span>
+                <span class="dtr-data">${cells[i].innerHTML}</span>
+            `;
+            details.appendChild(detailRow);
+        }
+
+        // Adicionar detalhes após a linha
+        row.parentNode.insertBefore(details, row.nextSibling);
+    }
+}
+
+// Configurar tabela responsiva baseada no tamanho da tela
+function setupResponsiveTable() {
+    // Adicionar evento de redimensionamento para atualizar a tabela
+    window.addEventListener('resize', function () {
+        updateTable();
+    });
+}
+
+// Renderiza os controles de paginação da tabela
+// Cria botões de navegação entre páginas com indicadores visuais
+function renderPagination(totalItems) {
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const container = document.getElementById('paginationControls');
+    container.innerHTML = '';
+
+    // Não exibe paginação se houver apenas uma página
+    if (totalPages <= 1) return;
+
+    // Função auxiliar para criar botões de paginação
+    const createButton = (text, page, disabled = false, active = false) => {
+        const li = document.createElement('li');
+        li.className = `page-item ${disabled ? 'disabled' : ''} ${active ? 'active' : ''}`;
+        const btn = document.createElement('button');
+        btn.className = 'page-link';
+        btn.textContent = text;
+        if (!disabled) btn.onclick = () => { currentPage = page; updateTable(); };
+        li.appendChild(btn);
+        return li;
+    };
+
+    // Botão anterior
+    container.appendChild(createButton('«', Math.max(1, currentPage - 1), currentPage === 1));
+
+    // Primeira página
+    container.appendChild(createButton('1', 1, false, currentPage === 1));
+
+    // Reticências antes da página atual
+    if (currentPage > 3) {
+        const li = document.createElement('li');
+        li.className = 'page-item disabled';
+        li.innerHTML = '<span class="page-link">...</span>';
+        container.appendChild(li);
+    }
+
+    // Páginas ao redor da página atual
+    for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+        container.appendChild(createButton(i, i, false, i === currentPage));
+    }
+
+    // Reticências depois da página atual
+    if (currentPage < totalPages - 2) {
+        const li = document.createElement('li');
+        li.className = 'page-item disabled';
+        li.innerHTML = '<span class="page-link">...</span>';
+        container.appendChild(li);
+    }
+
+    // Última página
+    if (totalPages > 1) {
+        container.appendChild(createButton(totalPages, totalPages, false, currentPage === totalPages));
+    }
+
+    // Botão próximo
+    container.appendChild(createButton('»', Math.min(totalPages, currentPage + 1), currentPage === totalPages));
+}
+
+// Atualiza a interface do usuário com contadores e estados dos botões
+function updateUI() {
+    const hasData = patrimonioData.length > 0;
+    elements.totalItems.textContent = patrimonioData.length;
+    elements.clearBtn.disabled = !hasData;
+    elements.exportExcelBtn.disabled = !hasData;
+    elements.exportPdfBtn.disabled = !hasData;
+    if (hasData) {
+        elements.exportExcelBtn.innerHTML = `<i class="bi bi-file-earmark-excel"></i> Exportar Excel (${patrimonioData.length})`;
+        elements.exportPdfBtn.innerHTML = `<i class="bi bi-file-earmark-pdf"></i> Exportar PDF (${patrimonioData.length})`;
+    }
+}
+
+// Abre o modal de edição preenchido com os dados do item selecionado
 function editItem(index) {
     const item = patrimonioData[index];
-
-    // Preencher formulário
+    if (!item) return;
     document.getElementById('editIndex').value = index;
     document.getElementById('editPatrimonio').value = item.patrimonio;
     document.getElementById('editItem').value = item.item;
     document.getElementById('editCoordenacao').value = item.coordenacao;
     document.getElementById('editServidor').value = item.servidor;
     document.getElementById('editCoordenador').value = item.coordenador;
-
-    // Mostrar modal
     editModal.show();
 }
 
-/**
- * Salva edição do item
- */
+// Salva as alterações feitas no item editado
 function saveEdit() {
     const index = parseInt(document.getElementById('editIndex').value);
+    if (isNaN(index) || index < 0 || index >= patrimonioData.length) return;
 
-    // Validar formulário
-    if (!elements.editForm.checkValidity()) {
-        elements.editForm.reportValidity();
+    const form = elements.editForm;
+    if (!form.checkValidity()) {
+        form.reportValidity();
         return;
     }
 
-    // Atualizar dados
     patrimonioData[index] = {
         ...patrimonioData[index],
         patrimonio: document.getElementById('editPatrimonio').value.trim(),
@@ -425,349 +506,464 @@ function saveEdit() {
         coordenador: document.getElementById('editCoordenador').value.trim()
     };
 
-    // Atualizar interface
+    saveDataToStorage();
     updateTable();
     editModal.hide();
-
-    showAlert('Dados atualizados com sucesso!', 'success');
+    showAlert('Dados atualizados!', 'success');
 }
 
-/**
- * Exclui item da lista
- */
+// Remove um item da lista após confirmação do usuário
 function deleteItem(index) {
     if (confirm('Tem certeza que deseja excluir este item?')) {
         const item = patrimonioData[index];
         patrimonioData.splice(index, 1);
-
+        saveDataToStorage();
+        currentPage = 1;
         updateTable();
         updateUI();
-
         showAlert(`Item ${item.patrimonio} removido.`, 'info');
     }
 }
 
-// ==== FUNÇÕES DE EXPORTAÇÃO ====
-
-/**
- * Exporta dados para Excel
- */
-function exportToExcel() {
+//  EXPORTAÇÃO
+async function exportToExcel() {
     if (patrimonioData.length === 0) {
         showAlert('Não há dados para exportar.', 'warning');
         return;
     }
 
     try {
-        // Preparar dados para exportação
-        const exportData = patrimonioData.map((item, index) => ({
-            'Nº': index + 1,
-            'Patrimônio': item.patrimonio,
-            'Item': item.item,
-            'Coordenação': item.coordenacao,
-            'Servidor(a)': item.servidor,
-            'Coordenador': item.coordenador,
-            'Data/Hora': item.dataHora
-        }));
-
-        // Criar workbook
-        const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.json_to_sheet(exportData);
-
-        // Configurar largura das colunas
-        const colWidths = [
-            { wch: 5 },   // Nº
-            { wch: 15 },  // Patrimônio
-            { wch: 30 },  // Item
-            { wch: 15 },  // Coordenação
-            { wch: 25 },  // Servidor
-            { wch: 25 },  // Coordenador
-            { wch: 20 }   // Data/Hora
+        const hoje = new Date();
+        const meses = [
+            'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+            'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
         ];
-        ws['!cols'] = colWidths;
+        const dataFormatada = `${hoje.getDate()} de ${meses[hoje.getMonth()]} de ${hoje.getFullYear()} às ${String(hoje.getHours()).padStart(2, '0')}:${String(hoje.getMinutes()).padStart(2, '0')}`;
 
-        // Adicionar worksheet ao workbook
-        XLSX.utils.book_append_sheet(wb, ws, 'Patrimônio');
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet('Patrimônio');
 
-        // Gerar nome do arquivo com data/hora
-        const now = new Date();
-        const fileName = `patrimonio_${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}.xlsx`;
+        // Título institucional
+        sheet.mergeCells('A1:G1');
+        // sheet.getCell('A1').value = `Relatório de Patrimônio - ${hoje.toLocaleDateString('pt-BR')}`;
+        sheet.getCell('A1').value = `Relatório de Patrimônios`;
+        sheet.getCell('A1').font = { bold: true, size: 14, color: { argb: 'FFFFFF' } };
+        sheet.getCell('A1').alignment = { horizontal: 'center' };
+        sheet.getCell('A1').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '0D6EFD' } };
 
-        // Fazer download
-        XLSX.writeFile(wb, fileName);
+        sheet.mergeCells('A2:G2');
+        sheet.getCell('A2').value = `Gerado em: ${dataFormatada}`;
+        sheet.getCell('A2').font = { bold: true, color: { argb: 'FFFFFF' } };
+        sheet.getCell('A2').alignment = { horizontal: 'center' };
+        sheet.getCell('A2').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '0D6EFD' } };
 
-        showAlert(`Arquivo Excel exportado: ${fileName}`, 'success');
+        sheet.mergeCells('A3:G3');
+        sheet.getCell('A3').value = `Total de itens: ${patrimonioData.length}`;
+        sheet.getCell('A3').font = { bold: true, color: { argb: 'FFFFFF' } };
+        sheet.getCell('A3').alignment = { horizontal: 'center' };
+        sheet.getCell('A3').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '0D6EFD' } };
 
-    } catch (error) {
-        console.error('Erro ao exportar Excel:', error);
-        showAlert('Erro ao exportar arquivo Excel.', 'danger');
+        // Cabeçalho
+        const header = ['Nº', 'Patrimônio', 'Item', 'Coordenação', 'Servidor(a)', 'Coordenador', 'Data/Hora'];
+        sheet.addRow([]);
+        sheet.addRow(header);
+        const headerRow = sheet.getRow(5);
+        headerRow.eachCell(cell => {
+            cell.font = { bold: true, color: { argb: 'FFFFFF' } };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '4F81BD' } };
+            cell.alignment = { horizontal: 'center' };
+            cell.border = {
+                top: { style: 'thin' },
+                bottom: { style: 'thin' },
+                left: { style: 'thin' },
+                right: { style: 'thin' }
+            };
+        });
+
+        // Dados
+        patrimonioData.forEach((item, i) => {
+            const row = sheet.addRow([
+                i + 1,
+                item.patrimonio,
+                item.item,
+                item.coordenacao,
+                item.servidor,
+                item.coordenador,
+                item.dataHora
+            ]);
+            const bgColor = i % 2 === 0 ? 'E9EDF5' : 'FFFFFF';
+            row.eachCell(cell => {
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgColor } };
+                cell.alignment = { horizontal: 'left' };
+                cell.border = {
+                    top: { style: 'thin' },
+                    bottom: { style: 'thin' },
+                    left: { style: 'thin' },
+                    right: { style: 'thin' }
+                };
+            });
+        });
+
+        // Largura das colunas
+        const widths = [6, 12, 35, 18, 22, 22, 20];
+        widths.forEach((w, i) => sheet.getColumn(i + 1).width = w);
+
+        // Filtro automático
+        sheet.autoFilter = {
+            from: 'A5',
+            to: `G${sheet.rowCount}`
+        };
+
+        // Congelamento do cabeçalho
+        sheet.views = [{ state: 'frozen', xSplit: 0, ySplit: 5 }];
+
+        // Exportar
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `patrimonio_${hoje.getFullYear()}${String(hoje.getMonth() + 1).padStart(2, '0')}${String(hoje.getDate()).padStart(2, '0')}_${String(hoje.getHours()).padStart(2, '0')}${String(hoje.getMinutes()).padStart(2, '0')}.xlsx`;
+        link.click();
+
+        showAlert(`✅ Arquivo Excel exportado com sucesso`, 'success');
+
+    } catch (e) {
+        console.error('❌ Erro detalhado ao exportar Excel:', e);
+        showAlert('❌ Erro ao exportar Excel. Verifique o console para detalhes.', 'danger');
     }
 }
 
-/**
- * Exporta dados para PDF
- */
 function exportToPDF() {
-    if (patrimonioData.length === 0) {
-        showAlert('Não há dados para exportar.', 'warning');
-        return;
-    }
-
+    if (patrimonioData.length === 0) return showAlert('Não há dados para exportar.', 'warning');
     try {
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
+        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const margin = 15;
 
-        // Configurações
-        const pageWidth = doc.internal.pageSize.width;
-        const margin = 20;
-        let yPosition = 30;
+        // Logo
+        const logoBase64 = ''; // <<< Insira aqui o base64 da imagem do brasão
 
-        // Título
+        // Adiciona logo centralizada no topo
+        const logoWidth = 20.37; // 77px ≈ 20.37mm
+        const logoHeight = 20.37;
+        doc.addImage(logoBase64, 'PNG', (pageWidth - logoWidth) / 2, 10, logoWidth, logoHeight);
+
+        let y = 10 + logoHeight + 5;
+
+        // Cabeçalho moderno
         doc.setFontSize(18);
         doc.setFont(undefined, 'bold');
-        doc.text('Relatório de Patrimônio', pageWidth / 2, yPosition, { align: 'center' });
+        doc.setTextColor(40);
+        doc.text('Relatório de Patrimônios', pageWidth / 2, y, { align: 'center' });
 
-        yPosition += 10;
-
-        // Data de geração
+        y += 10;
         doc.setFontSize(10);
         doc.setFont(undefined, 'normal');
-        doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, pageWidth / 2, yPosition, { align: 'center' });
-        doc.text(`Total de itens: ${patrimonioData.length}`, pageWidth / 2, yPosition + 5, { align: 'center' });
+        const hoje = new Date();
+        const meses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+        const dataFormatada = `${hoje.getDate()} de ${meses[hoje.getMonth()]} de ${hoje.getFullYear()} às ${String(hoje.getHours()).padStart(2, '0')}:${String(hoje.getMinutes()).padStart(2, '0')}`;
+        doc.text(`Gerado em: ${dataFormatada}`, pageWidth / 2, y, { align: 'center' });
 
-        yPosition += 20;
+        y += 5;
+        doc.text(`Total de itens: ${patrimonioData.length}`, pageWidth / 2, y, { align: 'center' });
 
-        // Cabeçalho da tabela
-        doc.setFontSize(8);
-        doc.setFont(undefined, 'bold');
+        y += 10;
 
+        // Tabela
         const headers = ['Nº', 'Patrimônio', 'Item', 'Coordenação', 'Servidor(a)', 'Coordenador'];
-        const colWidths = [15, 25, 60, 25, 40, 40];
-        let xPosition = margin;
+        const colWidths = [10, 25, 55, 25, 35, 35];
+        const lineHeight = 6;
 
-        headers.forEach((header, index) => {
-            doc.text(header, xPosition, yPosition);
-            xPosition += colWidths[index];
+        doc.setFontSize(9);
+        doc.setFont(undefined, 'bold');
+        let x = margin;
+
+        headers.forEach((h, i) => {
+            doc.text(h, x, y);
+            x += colWidths[i];
         });
 
-        yPosition += 5;
+        y += 6;
+        doc.setDrawColor(200);
+        doc.line(margin, y, pageWidth - margin, y);
+        y += 4;
 
-        // Linha separadora
-        doc.line(margin, yPosition, pageWidth - margin, yPosition);
-        yPosition += 5;
-
-        // Dados
         doc.setFont(undefined, 'normal');
 
-        patrimonioData.forEach((item, index) => {
-            // Verificar se precisa de nova página
-            if (yPosition > 270) {
-                doc.addPage();
-                yPosition = 30;
+        patrimonioData.forEach((item, idx) => {
+            // Prepara as células com quebra de texto
+            const cells = [
+                String(idx + 1),
+                item.patrimonio,
+                item.item,
+                item.coordenacao,
+                item.servidor,
+                item.coordenador
+            ];
 
-                // Repetir cabeçalho
+            // Divide cada célula conforme a largura da coluna
+            const splitCells = cells.map((text, i) =>
+                doc.splitTextToSize(text, colWidths[i] - 2) // margem interna pequena
+            );
+
+            // Determina a altura da linha com base na célula com mais linhas
+            const maxLines = Math.max(...splitCells.map(lines => lines.length), 1);
+            const rowHeight = maxLines * lineHeight;
+
+            // Verifica se há espaço suficiente na página atual
+            if (y + rowHeight > pageHeight - 20) {
+                doc.addPage();
+                y = margin;
+                let x = margin;
                 doc.setFont(undefined, 'bold');
-                xPosition = margin;
-                headers.forEach((header, headerIndex) => {
-                    doc.text(header, xPosition, yPosition);
-                    xPosition += colWidths[headerIndex];
+                headers.forEach((h, i) => {
+                    doc.text(h, x, y);
+                    x += colWidths[i];
                 });
-                yPosition += 5;
-                doc.line(margin, yPosition, pageWidth - margin, yPosition);
-                yPosition += 5;
+                y += 6;
+                doc.setDrawColor(200);
+                doc.line(margin, y, pageWidth - margin, y);
+                y += 4;
                 doc.setFont(undefined, 'normal');
             }
 
-            xPosition = margin;
-            const rowData = [
-                (index + 1).toString(),
-                item.patrimonio,
-                item.item.length > 25 ? item.item.substring(0, 25) + '...' : item.item,
-                item.coordenacao,
-                item.servidor.length > 20 ? item.servidor.substring(0, 20) + '...' : item.servidor,
-                item.coordenador.length > 20 ? item.coordenador.substring(0, 20) + '...' : item.coordenador
-            ];
+            // Escreve cada célula linha por linha
+            let x = margin;
+            for (let i = 0; i < splitCells.length; i++) {
+                const lines = splitCells[i];
+                for (let j = 0; j < lines.length; j++) {
+                    doc.text(lines[j], x, y + (j * lineHeight));
+                }
+                x += colWidths[i];
+            }
 
-            rowData.forEach((data, dataIndex) => {
-                doc.text(data, xPosition, yPosition);
-                xPosition += colWidths[dataIndex];
-            });
-
-            yPosition += 8;
+            y += rowHeight;
         });
 
-        // Rodapé
-        const pageCount = doc.internal.getNumberOfPages();
-        for (let i = 1; i <= pageCount; i++) {
+        // Rodapé com paginação
+        const totalPages = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= totalPages; i++) {
             doc.setPage(i);
             doc.setFontSize(8);
-            doc.text(`Página ${i} de ${pageCount}`, pageWidth / 2, 290, { align: 'center' });
+            doc.setTextColor(120);
+            doc.text(`Página ${i} de ${totalPages}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
         }
 
-        // Gerar nome do arquivo
-        const now = new Date();
-        const fileName = `patrimonio_${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}.pdf`;
-
-        // Fazer download
+        // Nome do arquivo
+        const fileName = `patrimonio_${hoje.getFullYear()}${String(hoje.getMonth() + 1).padStart(2, '0')}${String(hoje.getDate()).padStart(2, '0')}_${String(hoje.getHours()).padStart(2, '0')}${String(hoje.getMinutes()).padStart(2, '0')}.pdf`;
         doc.save(fileName);
-
         showAlert(`Arquivo PDF exportado: ${fileName}`, 'success');
-
-    } catch (error) {
-        console.error('Erro ao exportar PDF:', error);
-        showAlert('Erro ao exportar arquivo PDF.', 'danger');
+    } catch (e) {
+        showAlert('Erro ao exportar PDF.', 'danger');
     }
 }
 
-// ==== FUNÇÕES AUXILIARES ====
 
-/**
- * Limpa todos os dados
- */
+// Limpa todos os dados de patrimônio armazenados após confirmação do usuário
 function clearData() {
     if (patrimonioData.length === 0) return;
-
-    if (confirm(`Tem certeza que deseja limpar todos os ${patrimonioData.length} itens?`)) {
+    if (confirm(`Limpar todos os ${patrimonioData.length} itens? Esta ação não pode ser desfeita.`)) {
         patrimonioData = [];
+        saveDataToStorage();
+        currentPage = 1;
         updateTable();
         updateUI();
         showAlert('Dados limpos com sucesso.', 'info');
     }
 }
 
-/**
- * Mostra alerta na interface
- */
 function showAlert(message, type = 'info') {
     const alertDiv = document.createElement('div');
     alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
     alertDiv.innerHTML = `
-    <i class="bi bi-${getAlertIcon(type)}"></i>
-    ${message}
-    <button type="button" class="btn-close" aria-label="Close"></button>
+        <i class="bi bi-${getAlertIcon(type)}"></i> ${message}
+        <button type="button" class="btn-close" aria-label="Close"></button>
     `;
-
     elements.alertContainer.appendChild(alertDiv);
-
-    // Auto-remover após 5 segundos
-    setTimeout(() => {
-        if (alertDiv.parentNode) {
-            alertDiv.remove();
-        }
-    }, 5000);
+    setTimeout(() => alertDiv.remove(), 5000);
 }
 
-/**
- * Retorna ícone apropriado para o tipo de alerta
- */
 function getAlertIcon(type) {
     const icons = {
         success: 'check-circle',
         danger: 'exclamation-triangle',
-        warning: 'exclamation-circle',
+        warning: 'exclamation-triangle',
         info: 'info-circle'
     };
     return icons[type] || 'info-circle';
 }
 
-// ==== TRATAMENTO DE ERROS GLOBAIS ====
-window.addEventListener('error', function (e) {
-    console.error('Erro global:', e.error);
-    showAlert('Ocorreu um erro inesperado. Verifique o console para mais detalhes.', 'danger');
-});
+const footerText = document.getElementById('footerText');
+const hoje = new Date();
+const ano = hoje.getFullYear();
+footerText.innerHTML = `<i class="bi bi-c-circle"></i> ${ano} Todos os direitos reservados SUCAP/COSP.`;
 
-// ==== FUNÇÕES EXPOSTAS GLOBALMENTE ====
-window.editItem = editItem;
-window.deleteItem = deleteItem;
 
-// ==== LOG DE INICIALIZAÇÃO ====
-console.log('📱 Script do Leitor QR Code Patrimônio carregado com sucesso!');
-console.log('🔧 Funcionalidades disponíveis:');
-console.log('   - Leitura de QR Codes via câmera');
-console.log('   - Parsing automático de dados patrimoniais');
-console.log('   - Exportação para Excel (.xlsx)');
-console.log('   - Exportação para PDF');
-console.log('   - Interface responsiva');
-console.log('   - Edição manual de dados');
-nExportPDF.addEventListener("click", () => {
-    exportTableToPDF();
-});
+// --- Início da integração do gerador de QR Code ---
 
-// Limpar tabela
-btnClearTable.addEventListener("click", () => {
-    if (confirm("Tem certeza que deseja limpar todos os dados da tabela?")) {
-        dataTableBody.innerHTML = "";
+function setupQRCodeGenerator() {
+    const canvas = document.getElementById('qrcode');
+    if (!canvas) {
+        console.error('Canvas não encontrado!');
+        return;
     }
-});
 
-// document.getElementById('searchInput').addEventListener('input', function () {
-//     const termo = this.value.toLowerCase();
-//     const linhas = elements.dataTableBody.querySelectorAll('tr');
+    const ctx = canvas.getContext('2d');
+    const input = document.getElementById('qr-text');
+    const btn = document.getElementById('generate-btn');
+    const downloadBtn = document.getElementById('download-btn');
+    const status = document.getElementById('status');
+    const colorPicker = document.getElementById('color-picker');
 
-//     linhas.forEach(linha => {
-//         const patrimonio = linha.querySelector('td:nth-child(2)');
-//         if (patrimonio && patrimonio.textContent.toLowerCase().includes(termo)) {
-//             linha.style.display = '';
-//         } else {
-//             linha.style.display = 'none';
-//         }
-//     });
-// });
-document.getElementById('searchInput').addEventListener('input', function () {
-    currentPage = 1;
-    updateTable();
-});
+    // Verificar se todos os elementos existem
+    if (!input || !btn || !downloadBtn || !status || !colorPicker) {
+        console.error('Elementos do QR Code não encontrados!');
+        return;
+    }
 
-let currentPage = 1;
-const itemsPerPage = 1;
+    let qrColor = '#FFD700';
 
-function updateTable() {
-    elements.dataTableBody.innerHTML = '';
+    // Limpar o canvas inicialmente
+    function clearCanvas() {
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
 
-    const start = (currentPage - 1) * itemsPerPage;
-    const end = start + itemsPerPage;
-    const pageData = patrimonioData.slice(start, end);
+    function gerarQRCode(texto) {
+        status.textContent = '';
 
-    pageData.forEach((item, index) => {
-        const row = document.createElement('tr');
-        row.className = 'fade-in new-row';
-        row.innerHTML = `
-      <td><strong>${start + index + 1}</strong></td>
-      <td><span class="badge bg-primary">${item.patrimonio}</span></td>
-      <td>${item.item}</td>
-      <td><span class="badge bg-secondary">${item.coordenacao}</span></td>
-      <td>${item.servidor}</td>
-      <td>${item.coordenador}</td>
-      <td><small class="text-muted">${item.dataHora}</small></td>
-      <td>
-        <button class="btn btn-sm btn-outline-primary action-btn" onclick="editItem(${start + index})" title="Editar">
-          <i class="bi bi-pencil"></i>
-        </button>
-        <button class="btn btn-sm btn-outline-danger action-btn" onclick="deleteItem(${start + index})" title="Excluir">
-          <i class="bi bi-trash"></i>
-        </button>
-      </td>
-    `;
-        elements.dataTableBody.appendChild(row);
-        setTimeout(() => row.classList.remove('new-row'), 500);
+        // Limpar espaços em branco do texto
+        const textoLimpo = texto.trim();
+
+        if (!textoLimpo) {
+            status.style.color = 'red';
+            status.textContent = 'Digite algum texto para gerar o QR Code.';
+            clearCanvas();
+            return;
+        }
+
+        try {
+            clearCanvas();
+
+            // Verificar se a biblioteca QRCode está disponível
+            if (typeof QRCode === 'undefined') {
+                status.style.color = 'red';
+                status.textContent = 'Biblioteca QRCode não carregada.';
+                return;
+            }
+
+            // Usar a API correta da biblioteca
+            QRCode.toCanvas(canvas, textoLimpo, {
+                width: canvas.width,
+                margin: 1,
+                color: {
+                    dark: qrColor,
+                    light: '#FFFFFF'
+                },
+                errorCorrectionLevel: 'M'
+            }, function (error) {
+                if (error) {
+                    console.error('Erro ao gerar QR:', error);
+                    status.style.color = 'red';
+                    status.textContent = 'Erro ao gerar QR Code.';
+                    // Tentar método alternativo
+                    tentarGerarQRCodeAlternativo(textoLimpo);
+                    return;
+                }
+                status.style.color = 'green';
+                status.textContent = 'QR Code gerado com sucesso!';
+            });
+
+        } catch (err) {
+            console.error('Erro capturado:', err);
+            status.style.color = 'red';
+            status.textContent = 'Erro inesperado ao gerar QR Code.';
+        }
+    }
+
+    // Método alternativo caso o principal falhe
+    function tentarGerarQRCodeAlternativo(texto) {
+        try {
+            // Limpar e tentar método mais simples
+            clearCanvas();
+
+            QRCode.toCanvas(texto, {
+                width: canvas.width,
+                color: {
+                    dark: qrColor,
+                    light: '#FFFFFF'
+                }
+            }, function (err, canvasElement) {
+                if (err) {
+                    console.error('Erro no método alternativo:', err);
+                    status.style.color = 'red';
+                    status.textContent = 'Falha ao gerar QR Code.';
+                    return;
+                }
+
+                // Desenhar o canvas gerado no nosso canvas
+                ctx.drawImage(canvasElement, 0, 0);
+                status.style.color = 'green';
+                status.textContent = 'QR Code gerado com sucesso!';
+            });
+        } catch (err) {
+            console.error('Erro no método alternativo:', err);
+            status.style.color = 'red';
+            status.textContent = 'Erro crítico ao gerar QR Code.';
+        }
+    }
+
+    // Event Listeners
+    btn.addEventListener('click', () => {
+        gerarQRCode(input.value);
     });
 
-    renderPagination();
+    downloadBtn.addEventListener('click', () => {
+        try {
+            const dataUrl = canvas.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.href = dataUrl;
+            a.download = 'qrcode-patrimonio.png';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+
+            status.style.color = 'blue';
+            status.textContent = 'QR Code baixado com sucesso!';
+
+        } catch (err) {
+            console.error('Erro ao baixar:', err);
+            status.style.color = 'red';
+            status.textContent = 'Erro ao baixar imagem.';
+        }
+    });
+
+    colorPicker.addEventListener('input', (e) => {
+        qrColor = e.target.value;
+        if (input.value.trim()) {
+            gerarQRCode(input.value);
+        }
+    });
+
+    // Gerar QR Code inicial apenas se houver texto
+    setTimeout(() => {
+        if (input.value.trim()) {
+            gerarQRCode(input.value);
+        }
+    }, 100);
 }
 
-function renderPagination(totalItems) {
-    const totalPages = Math.ceil(totalItems / itemsPerPage);
-    const container = document.getElementById('paginationControls');
-    container.innerHTML = '';
+// Inicializar quando o DOM estiver pronto
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM Carregado - Inicializando gerador de QR Code...');
+    setupQRCodeGenerator();
+});
 
-    for (let i = 1; i <= totalPages; i++) {
-        const btn = document.createElement('button');
-        btn.className = `btn btn-sm ${i === currentPage ? 'btn-primary' : 'btn-outline-primary'} mx-1`;
-        btn.textContent = i;
-        btn.onclick = () => {
-            currentPage = i;
-            updateTable();
-        };
-        container.appendChild(btn);
-    }
-}
+// Verificar se há erros globais
+window.addEventListener('error', function (e) {
+    console.error('Erro global:', e.error);
+});

@@ -4,7 +4,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Leitor QR Code Patrimônios</title>
+    <title>Sistema Leitor QR Code Patrimônio</title>
+
+    <!-- Meta tags para SEO e PWA -->
+    <meta name="description"
+        content="Sistema completo para leitura de QR Codes patrimoniais com exportação para Excel e PDF">
+    <meta name="keywords" content="QR Code, Patrimônio, Scanner, Leitor, Gestão">
+    <meta name="author" content="Sistema Patrimônio">
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0d6efd">
+    <link rel="apple-touch-icon"
+        href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxOTIiIGhlaWdodD0iMTkyIiByeD0iMjQiIGZpbGw9IiMwZDZlZmQiLz4KPHJlY3QgeD0iMjQiIHk9IjI0IiB3aWR0aD0iMTQ0IiBoZWlnaHQ9IjE0NCIgcng9IjgiIGZpbGw9IndoaXRlIi8+CjxyZWN0IHg9IjQwIiB5PSI0MCIgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiBmaWxsPSIjMGQ2ZWZkIi8+CjxyZWN0IHg9IjcyIiB5PSI0MCIgd2lkdGg9IjgiIGhlaWdodD0iOCIgZmlsbD0iIzBkNmVmZCIvPgo8cmVjdCB4PSI4OCIgeT0iNDAiIHdpZHRoPSI4IiBoZWlnaHQ9IjgiIGZpbGw9IiMwZDZlZmQiLz4KPHJlY3QgeD0iMTA0IiB5PSI0MCIgd2lkdGg9IjgiIGhlaWdodD0iOCIgZmlsbD0iIzBkNmVmZCIvPgo8cmVjdCB4PSIxMjgiIHk9IjQwIiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIGZpbGw9IiMwZDZlZmQiLz4KPHJlY3QgeD0iNDAiIHk9IjcyIiB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjMGQ2ZWZkIi8+CjxyZWN0IHg9IjU2IiB5PSI3MiIgd2lkdGg9IjgiIGhlaWdodD0iOCIgZmlsbD0iIzBkNmVmZCIvPgo8cmVjdCB4PSI3MiIgeT0iNzIiIHdpZHRoPSI4IiBoZWlnaHQ9IjgiIGZpbGw9IiMwZDZlZmQiLz4KPHJlY3QgeD0iOTYiIHk9IjcyIiB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjMGQ2ZWZkIi8+CjxyZWN0IHg9IjEyOCIgeT0iNzIiIHdpZHRoPSI4IiBoZWlnaHQ9IjgiIGZpbGw9IiMwZDZlZmQiLz4KPHJlY3QgeD0iMTQ0IiB5PSI3MiIgd2lkdGg9IjgiIGhlaWdodD0iOCIgZmlsbD0iIzBkNmVmZCIvPgo8cmVjdCB4PSI0MCIgeT0iODgiIHdpZHRoPSI4IiBoZWlnaHQ9IjgiIGZpbGw9IiMwZDZlZmQiLz4KPHJlY3QgeD0iNzIiIHk9Ijg4IiB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjMGQ2ZWZkIi8+CjxyZWN0IHg9Ijg4IiB5PSI4OCIgd2lkdGg9IjgiIGhlaWdodD0iOCIgZmlsbD0iIzBkNmVmZCIvPgo8cmVjdCB4PSIxMDQiIHk9Ijg4IiB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjMGQ2ZWZkIi8+CjxyZWN0IHg9IjEyOCIgeT0iODgiIHdpZHRoPSI4IiBoZWlnaHQ9IjgiIGZpbGw9IiMwZDZlZmQiLz4KPHJlY3QgeD0iNDAiIHk9IjEwNCIgd2lkdGg9IjgiIGhlaWdodD0iOCIgZmlsbD0iIzBkNmVmZCIvPgo8cmVjdCB4PSI1NiIgeT0iMTA0IiB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjMGQ2ZWZkIi8+CjxyZWN0IHg9IjcyIiB5PSIxMDQiIHdpZHRoPSI4IiBoZWlnaHQ9IjgiIGZpbGw9IiMwZDZlZmQiLz4KPHJlY3QgeD0iOTYiIHk9IjEwNCIgd2lkdGg9IjgiIGhlaWdodD0iOCIgZmlsbD0iIzBkNmVmZCIvPgo8cmVjdCB4PSIxMjgiIHk9IjEwNCIgd2lkdGg9IjgiIGhlaWdodD0iOCIgZmlsbD0iIzBkNmVmZCIvPgo8cmVjdCB4PSIxNDQiIHk9IjEwNCIgd2lkdGg9IjgiIGhlaWdodD0iOCIgZmlsbD0iIzBkNmVmZCIvPgo8cmVjdCB4PSI0MCIgeT0iMTI4IiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIGZpbGw9IiMwZDZlZmQiLz4KPHJlY3QgeD0iNzIiIHk9IjEyOCIgd2lkdGg9IjgiIGhlaWdodD0iOCIgZmlsbD0iIzBkNmVmZCIvPgo8cmVjdCB4PSI4OCIgeT0iMTI4IiB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjMGQ2ZWZkIi8+CjxyZWN0IHg9IjEwNCIgeT0iMTI4IiB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjMGQ2ZWZkIi8+CjxyZWN0IHg9IjEyOCIgeT0iMTI4IiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIGZpbGw9IiMwZDZlZmQiLz4KPC9zdmc+">
 
     <!-- Bootstrap 5.3 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -17,7 +29,9 @@
 
     <!-- jsPDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.20/jspdf.plugin.autotable.min.js"></script>
 
+    <!-- ExcelJS -->
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
 
     <!-- CSS Personalizado -->
@@ -27,84 +41,112 @@
 <body>
     <!-- Container principal -->
     <div class="container-fluid">
+        <!-- Header moderno -->
         <header>
             <h1><i class="bi bi-qr-code-scan"></i> Leitor QR Code Patrimônio</h1>
-            <p class="lead">Sistema para leitura e gerenciamento de patrimônios via QR Code</p>
+            <p class="lead">Sistema completo para leitura e gerenciamento de patrimônios via QR Code</p>
+            <nav>
+                <a class="nav-link" href="gerador-qr-code.html">
+                    <i class="bi bi-qr-code"></i> Gerador de QR Code
+                </a>
+            </nav>
         </header>
 
-        <!-- Alerta de mensagens e notificações -->
+        <!-- Container de alertas -->
         <div id="alertContainer"></div>
 
-        <div class="row">
-            <!-- Scanner para leitura de QR Codes -->
-            <div class="col-lg-6 mb-4">
+        <!-- Seção principal com scanner e formulário -->
+        <div class="row g-4">
+            <!-- Scanner QR Code -->
+            <div class="col-lg-6">
                 <div class="card">
-                    <!-- Cabeçalho do card com título e indicador de status da câmera -->
                     <div class="card-header">
                         <i class="bi bi-camera-video"></i> Scanner QR Code
                         <span id="cameraStatus" class="camera-status disconnected">Desconectado</span>
                     </div>
-                    <!-- Corpo do card: área de visualização da câmera e controles do scanner -->
                     <div class="card-body">
-                        <!-- Container onde o vídeo da câmera será exibido para leitura de QR Code -->
+                        <!-- Área de visualização da câmera -->
                         <div id="qr-reader" class="mb-3">
                             <div class="text-center text-white p-4">
-                                <i class="bi bi-camera-video" style="font-size: 3rem;"></i>
-                                <p class="mt-2">Clique em "Iniciar Scanner" para ativar a câmera</p>
+                                <i class="bi bi-camera-video" style="font-size: 3rem; opacity: 0.7;"></i>
+                                <p class="mt-2 mb-0">Clique em "Iniciar Scanner" para ativar a câmera</p>
+                                <small class="text-muted">Posicione o QR Code dentro da área de leitura</small>
                             </div>
                         </div>
-                        <!-- Botões de controle: iniciar e parar o scanner de QR Code -->
+
+                        <!-- Controles do scanner -->
                         <div class="d-grid gap-2 d-md-flex justify-content-md-center">
-                            <button id="startBtn" class="btn btn-success me-md-2">
+                            <button id="startBtn" class="btn btn-success">
                                 <i class="bi bi-play-circle"></i> Iniciar Scanner
                             </button>
                             <button id="stopBtn" class="btn btn-danger" disabled>
                                 <i class="bi bi-stop-circle"></i> Parar Scanner
                             </button>
                         </div>
+
+                        <!-- Instruções -->
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle"></i>
+                                <strong>Dica:</strong> Mantenha o QR Code bem iluminado e dentro da área de leitura
+                            </small>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Formulário para adicionar patrimônios manualmente sem usar QR Code -->
-            <div class="col-lg-6 mb-4">
+            <!-- Formulário manual -->
+            <div class="col-lg-6">
                 <div class="card">
                     <div class="card-header">
                         <i class="bi bi-keyboard"></i> Adicionar Manualmente
                     </div>
                     <div class="card-body">
-                        <!-- Formulário com campos obrigatórios para cadastro de patrimônio -->
                         <form id="manualAddForm">
-                            <div class="row g-2">
-                                <!-- Campo Patrimônio: número identificador do bem -->
+                            <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label for="inputPatrimonio" class="form-label required">Patrimônio</label>
-                                    <input type="text" class="form-control" id="inputPatrimonio" required>
+                                    <label for="inputPatrimonio" class="form-label required">
+                                        <i class="bi bi-tag"></i> Patrimônio
+                                    </label>
+                                    <input type="text" class="form-control" id="inputPatrimonio"
+                                        placeholder="Ex: PAT001" required>
                                 </div>
-                                <!-- Campo Item: descrição do bem patrimonial -->
+
                                 <div class="col-md-6">
-                                    <label for="inputItem" class="form-label required">Item</label>
-                                    <input type="text" class="form-control" id="inputItem" required>
+                                    <label for="inputItem" class="form-label required">
+                                        <i class="bi bi-box"></i> Item
+                                    </label>
+                                    <input type="text" class="form-control" id="inputItem"
+                                        placeholder="Ex: Notebook Dell" required>
                                 </div>
-                                <!-- Campo Coordenação: setor responsável pelo patrimônio -->
+
                                 <div class="col-md-6">
-                                    <label for="inputCoordenacao" class="form-label required">Coordenação</label>
-                                    <input type="text" class="form-control" id="inputCoordenacao" required>
+                                    <label for="inputCoordenacao" class="form-label required">
+                                        <i class="bi bi-building"></i> Coordenação
+                                    </label>
+                                    <input type="text" class="form-control" id="inputCoordenacao" placeholder="Ex: TI"
+                                        required>
                                 </div>
-                                <!-- Campo Servidor: responsável direto pelo bem -->
+
                                 <div class="col-md-6">
-                                    <label for="inputServidor" class="form-label required">Servidor(a)</label>
-                                    <input type="text" class="form-control" id="inputServidor" required>
+                                    <label for="inputServidor" class="form-label required">
+                                        <i class="bi bi-person"></i> Servidor(a)
+                                    </label>
+                                    <input type="text" class="form-control" id="inputServidor"
+                                        placeholder="Ex: João Silva" required>
                                 </div>
-                                <!-- Campo Coordenador: gestor da coordenação -->
+
                                 <div class="col-12">
-                                    <label for="inputCoordenador" class="form-label required">Coordenador</label>
-                                    <input type="text" class="form-control" id="inputCoordenador" required>
+                                    <label for="inputCoordenador" class="form-label required">
+                                        <i class="bi bi-person-badge"></i> Coordenador
+                                    </label>
+                                    <input type="text" class="form-control" id="inputCoordenador"
+                                        placeholder="Ex: Maria Santos" required>
                                 </div>
-                                <!-- Botão para submeter o formulário e adicionar o item -->
-                                <div class="col-12 mt-3">
+
+                                <div class="col-12">
                                     <button type="submit" class="btn btn-primary w-100">
-                                        <i class="bi bi-plus-circle"></i> Adicionar Item
+                                        <i class="bi bi-plus-circle"></i> Adicionar Patrimônio
                                     </button>
                                 </div>
                             </div>
@@ -114,136 +156,191 @@
             </div>
         </div>
 
-        <!-- Tabela de Dados -->
-        <!-- Seção de Tabela de Dados: Exibe os patrimônios coletados com funcionalidades de busca, exportação e paginação -->
+        <!-- Tabela de dados -->
         <div class="card">
-            <!-- Cabeçalho da tabela com título e contador de itens -->
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-table"></i> Dados Coletados</span>
+            <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
+                <span>
+                    <i class="bi bi-table"></i> Patrimônios Registrados
+                </span>
                 <span class="badge bg-primary" id="totalItems">0</span>
             </div>
+
             <div class="card-body">
-                <!-- Barra de ferramentas: campo de busca e botões de ação -->
-                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                    <!-- Campo de busca para filtrar dados na tabela -->
-                    <div class="input-group" style="max-width: 300px;">
-                        <span class="input-group-text"><i class="bi bi-search"></i></span>
-                        <input type="text" id="searchInput" class="form-control" placeholder="Buscar...">
+                <!-- Barra de ferramentas -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="bi bi-search"></i>
+                            </span>
+                            <input type="text" id="searchInput" class="form-control"
+                                placeholder="Buscar por patrimônio, item, coordenação...">
+                        </div>
                     </div>
-                    <!-- Botões de exportação e limpeza de dados -->
-                    <div class="d-flex gap-2 flex-wrap">
-                        <button id="exportExcelBtn" class="btn btn-success" disabled>
-                            <i class="bi bi-file-earmark-excel"></i> Exportar Excel
-                        </button>
-                        <button id="exportPdfBtn" class="btn btn-danger" disabled>
-                            <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
-                        </button>
-                        <button id="clearBtn" class="btn btn-warning" disabled>
-                            <i class="bi bi-trash"></i> Limpar Tudo
-                        </button>
+
+                    <div class="col-md-6">
+                        <div class="d-flex gap-2 flex-wrap justify-content-md-end">
+                            <button id="exportExcelBtn" class="btn btn-success" disabled>
+                                <i class="bi bi-file-earmark-excel"></i> Excel
+                            </button>
+                            <button id="exportPdfBtn" class="btn btn-danger" disabled>
+                                <i class="bi bi-file-earmark-pdf"></i> PDF
+                            </button>
+                            <button id="clearBtn" class="btn btn-warning" disabled>
+                                <i class="bi bi-trash"></i> Limpar
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Tabela responsiva com os dados dos patrimônios -->
+                <!-- Tabela responsiva -->
                 <div class="table-responsive">
                     <table class="table table-striped table-hover">
                         <thead>
                             <tr>
-                                <th width="5%">Nº</th>
-                                <th width="12%">Patrimônio</th>
-                                <th width="20%">Item</th>
-                                <th width="13%">Coordenação</th>
-                                <th width="15%">Servidor(a)</th>
-                                <th width="15%">Coordenador</th>
-                                <th width="12%">Data/Hora</th>
-                                <th width="8%">Ações</th>
+                                <th width="8%">
+                                    <i class="bi bi-hash"></i> Nº
+                                </th>
+                                <th width="15%">
+                                    <i class="bi bi-tag"></i> Patrimônio
+                                </th>
+                                <th width="25%">
+                                    <i class="bi bi-box"></i> Item
+                                </th>
+                                <th width="15%">
+                                    <i class="bi bi-building"></i> Coordenação
+                                </th>
+                                <th width="17%">
+                                    <i class="bi bi-person"></i> Servidor(a)
+                                </th>
+                                <th width="17%">
+                                    <i class="bi bi-person-badge"></i> Coordenador
+                                </th>
+                                <th width="15%">
+                                    <i class="bi bi-calendar"></i> Data/Hora
+                                </th>
+                                <th width="10%">
+                                    <i class="bi bi-gear"></i> Ações
+                                </th>
                             </tr>
                         </thead>
                         <tbody id="dataTableBody">
-                            <!-- Dados serão inseridos aqui via JavaScript -->
+                            <!-- Dados inseridos via JavaScript -->
                         </tbody>
                     </table>
                 </div>
 
-                <!-- Controles de paginação da tabela -->
-                <nav aria-label="Navegação de páginas">
+                <!-- Paginação -->
+                <nav aria-label="Navegação de páginas" class="mt-4">
                     <ul id="paginationControls" class="pagination justify-content-center">
+                        <!-- Controles de paginação inseridos via JavaScript -->
                     </ul>
                 </nav>
             </div>
         </div>
 
-        <!-- Modal de Edição: Permite editar os dados de um item já escaneado ou adicionado manualmente na tabela -->
+        <!-- Modal de edição -->
         <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
+            <div class="modal-dialog modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="editModalLabel"><i class="bi bi-pencil-square"></i> Editar Item</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <h5 class="modal-title" id="editModalLabel">
+                            <i class="bi bi-pencil-square"></i> Editar Patrimônio
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                     </div>
+
                     <div class="modal-body">
-                        <!-- Formulário com os campos editáveis do patrimônio -->
                         <form id="editForm">
-                            <!-- Campo oculto para armazenar o índice do item sendo editado -->
                             <input type="hidden" id="editIndex">
 
-                            <!-- Campo: Número do Patrimônio -->
-                            <div class="mb-3">
-                                <label for="editPatrimonio" class="form-label required">Patrimônio</label>
-                                <input type="text" class="form-control" id="editPatrimonio" required>
-                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="editPatrimonio" class="form-label required">
+                                        <i class="bi bi-tag"></i> Patrimônio
+                                    </label>
+                                    <input type="text" class="form-control" id="editPatrimonio" required>
+                                </div>
 
-                            <!-- Campo: Nome/Descrição do Item -->
-                            <div class="mb-3">
-                                <label for="editItem" class="form-label required">Item</label>
-                                <input type="text" class="form-control" id="editItem" required>
-                            </div>
+                                <div class="col-md-6">
+                                    <label for="editItem" class="form-label required">
+                                        <i class="bi bi-box"></i> Item
+                                    </label>
+                                    <input type="text" class="form-control" id="editItem" required>
+                                </div>
 
-                            <!-- Campo: Coordenação responsável -->
-                            <div class="mb-3">
-                                <label for="editCoordenacao" class="form-label required">Coordenação</label>
-                                <input type="text" class="form-control" id="editCoordenacao" required>
-                            </div>
+                                <div class="col-md-6">
+                                    <label for="editCoordenacao" class="form-label required">
+                                        <i class="bi bi-building"></i> Coordenação
+                                    </label>
+                                    <input type="text" class="form-control" id="editCoordenacao" required>
+                                </div>
 
-                            <!-- Campo: Nome do Servidor responsável -->
-                            <div class="mb-3">
-                                <label for="editServidor" class="form-label required">Servidor(a)</label>
-                                <input type="text" class="form-control" id="editServidor" required>
-                            </div>
+                                <div class="col-md-6">
+                                    <label for="editServidor" class="form-label required">
+                                        <i class="bi bi-person"></i> Servidor(a)
+                                    </label>
+                                    <input type="text" class="form-control" id="editServidor" required>
+                                </div>
 
-                            <!-- Campo: Nome do Coordenador -->
-                            <div class="mb-3">
-                                <label for="editCoordenador" class="form-label required">Coordenador</label>
-                                <input type="text" class="form-control" id="editCoordenador" required>
+                                <div class="col-12">
+                                    <label for="editCoordenador" class="form-label required">
+                                        <i class="bi bi-person-badge"></i> Coordenador
+                                    </label>
+                                    <input type="text" class="form-control" id="editCoordenador" required>
+                                </div>
                             </div>
                         </form>
                     </div>
-                    <!-- Rodapé do Modal de Edição -->
+
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" id="saveEditBtn" class="btn btn-primary">Salvar Alterações</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </button>
+                        <button type="button" id="saveEditBtn" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Salvar Alterações
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Rodapé da página - Exibe informações de copyright e data atual -->
+        <!-- Footer -->
         <footer>
             <div class="row">
-                <div class="col-12">
-                    <p class="mb-0" id="footerText">
-                        <!-- A data será inserida via JavaScript -->
+                <div class="col-12 text-center">
+                    <p class="mb-0">
+                        <i class="bi bi-shield-check"></i>
+                        Sistema de Leitura QR Code para Patrimônios -
+                        <span id="currentYear"></span> -
+                        <small class="text-muted">Desenvolvido com tecnologia moderna</small>
                     </p>
                 </div>
             </div>
         </footer>
     </div>
 
-    <!-- Bootstrap 5.3 JS Bundle com Popper - Framework CSS para componentes interativos e responsivos -->
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- JavaScript externo -->
     <script src="script.js"></script>
+
+    <script>
+        // Atualizar ano no footer
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        // Registrar Service Worker para PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(function (registration) {
+                        console.log('ServiceWorker registrado com sucesso:', registration.scope);
+                    })
+                    .catch(function (error) {
+                        console.log('Falha ao registrar ServiceWorker:', error);
+                    });
+            });
+        }
+    </script>
 </body>
 
 </html>
