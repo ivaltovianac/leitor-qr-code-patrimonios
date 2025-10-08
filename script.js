@@ -545,7 +545,8 @@ async function exportToExcel() {
 
         // Título institucional
         sheet.mergeCells('A1:G1');
-        sheet.getCell('A1').value = `Relatório de Patrimônio - ${hoje.toLocaleDateString('pt-BR')}`;
+        // sheet.getCell('A1').value = `Relatório de Patrimônio - ${hoje.toLocaleDateString('pt-BR')}`;
+        sheet.getCell('A1').value = `Relatório de Patrimônios`;
         sheet.getCell('A1').font = { bold: true, size: 14, color: { argb: 'FFFFFF' } };
         sheet.getCell('A1').alignment = { horizontal: 'center' };
         sheet.getCell('A1').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '0D6EFD' } };
