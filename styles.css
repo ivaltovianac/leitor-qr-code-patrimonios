@@ -1,31 +1,40 @@
-/* ===== SISTEMA LEITOR QR CODE PATRIMÔNIO - TEMA CLARO E HARMONIOSO ===== */
-
-/* Variáveis CSS para paleta de cores clara e harmoniosa */
+/* Variáveis CSS para paleta de cores */
 :root {
-  --primary-color: #4f46e5;
-  --primary-dark: #3730a3;
-  --primary-light: #a5b4fc;
-  --secondary-color: #64748b;
-  --success-color: #10b981;
-  --danger-color: #ef4444;
-  --warning-color: #f59e0b;
-  --info-color: #06b6d4;
-  --light-bg: #f8fafc;
-  --lighter-bg: #f1f5f9;
-  --card-bg: #ffffff;
-  --text-primary: #1e293b;
-  --text-secondary: #64748b;
-  --text-muted: #94a3b8;
-  --border-color: #e2e8f0;
-  --border-light: #f1f5f9;
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
-    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  /* Cores principais */
+  --primary-color: #003044; /* Azul petróleo profundo */
+  --primary-dark: #1c4a5b; /* Azul escuro suave */
+  --primary-light: #a5c8d4; /* Azul claro acinzentado */
+
+  /* Cores secundárias e de apoio */
+  --secondary-color: #3a327c; /* Cinza azulado equilibrado */
+  --success-color: #38726C; /* Verde sucesso vibrante */
+  --danger-color: #e74c3c; /* Vermelho alerta */
+  --warning-color: #f39c12; /* Amarelo dourado */
+  --info-color: #3498db; /* Azul informativo */
+
+  /* Fundos */
+  --light-bg: #f9fbfc; /* Fundo claro neutro */
+  --lighter-bg: #eef2f6; /* Fundo mais claro */
+  --card-bg: #ffffff; /* Cartões e blocos */
+
+  /* Texto */
+  --text-primary: #1e293b; /* Azul grafite para texto principal */
+  --text-secondary: #4b5563; /* Cinza escuro para texto secundário */
+  --text-muted: #9ca3af; /* Cinza claro para texto desativado */
+
+  /* Bordas e sombras */
+  --border-color: #d1d5db; /* Cinza claro para bordas */
+  --border-light: #e5e7eb; /* Bordas suaves */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+
+  /* Bordas e transições */
   --border-radius: 0.75rem;
   --border-radius-sm: 0.5rem;
-  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition: all 0.3s ease-in-out;
+
+  /* Tipografia */
   --font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
 }
 
@@ -73,7 +82,7 @@ body {
   );
 }
 
-/* Header moderno com cores claras */
+/* Header */
 header {
   background: linear-gradient(
     135deg,
@@ -150,7 +159,7 @@ header .nav-link:hover {
   box-shadow: var(--shadow-md);
 }
 
-/* Cards com cores suaves */
+/* Cards */
 .card {
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
@@ -179,7 +188,6 @@ header .nav-link:hover {
 }
 
 .card:hover {
-  transform: translateY(-4px);
   box-shadow: var(--shadow-lg);
   border-color: var(--primary-light);
 }
@@ -216,7 +224,7 @@ header .nav-link:hover {
   background: var(--card-bg);
 }
 
-/* Scanner QR Code com fundo mais claro */
+/* Scanner QR Code com fundo claro */
 #qr-reader {
   background: linear-gradient(
     135deg,
@@ -280,7 +288,7 @@ header .nav-link:hover {
   }
 }
 
-/* Botões com cores harmoniosas */
+/* Botões */
 .btn {
   border-radius: var(--border-radius-sm);
   font-weight: 600;
@@ -439,7 +447,7 @@ header .nav-link:hover {
   font-size: 1rem;
   transition: var(--transition);
   width: 100%;
-  background: var(--card-bg);
+  /* background: var(--card-bg); */
   color: var(--text-primary);
 }
 
@@ -460,7 +468,7 @@ header .nav-link:hover {
 /* Tabela com cores suaves */
 .table-responsive {
   border-radius: var(--border-radius);
-  overflow: hidden;
+  overflow-x: auto;
   box-shadow: var(--shadow-md);
   margin-bottom: 2rem;
   background: var(--card-bg);
@@ -470,6 +478,7 @@ header .nav-link:hover {
 .table {
   margin-bottom: 0;
   font-size: 0.9rem;
+  min-width: 600px;
 }
 
 .table th {
@@ -503,7 +512,7 @@ header .nav-link:hover {
 
 .table tbody tr:hover {
   background: var(--light-bg);
-  transform: scale(1.01);
+  /* transform: scale(1.01); */
 }
 
 .table .badge {
@@ -536,7 +545,7 @@ header .nav-link:hover {
   justify-content: center;
 }
 
-/* Alertas com cores suaves */
+/* Alertas */
 .alert {
   border-radius: var(--border-radius-sm);
   padding: 1rem 1.5rem;
@@ -674,13 +683,13 @@ footer i {
 /* Contador de itens */
 #totalItems {
   background: rgba(79, 70, 229, 0.1);
-  color: var(--primary-color);
+  color: #ffffff;
   padding: 0.5rem 1rem;
   border-radius: 2rem;
   font-weight: 700;
   font-size: 0.9rem;
   border: 1px solid rgba(79, 70, 229, 0.2);
-  animation: bounce 2s infinite;
+  animation: bounce 2s alternate;
 }
 
 @keyframes bounce {
@@ -721,7 +730,7 @@ footer i {
   border-radius: 0 var(--border-radius-sm) var(--border-radius-sm) 0;
 }
 
-/* Animações */
+Animações */
 .fade-in {
   animation: fadeIn 0.5s ease-out;
 }
@@ -763,8 +772,7 @@ footer i {
   }
 }
 
-/* ===== ESTILOS PARA GERADOR QR CODE ===== */
-
+/*  Estilos para o gerador de QR Code */
 /* Container do gerador */
 .qr-generator {
   text-align: center;
@@ -917,69 +925,78 @@ footer i {
   border: 1px solid rgba(6, 182, 212, 0.3);
 }
 
-/* ===== RESPONSIVIDADE AVANÇADA ===== */
-
-/* Tablets */
-@media (max-width: 768px) {
-  .container-fluid {
-    padding: 1.5rem;
-  }
-
-  header h1 {
-    font-size: 2rem;
-  }
-
-  .card-body {
-    padding: 1rem;
-  }
-
-  #qr-reader {
-    min-height: 250px;
-  }
-
-  .btn {
-    width: 100%;
-    margin-bottom: 0.5rem;
-    justify-content: center;
-  }
-
-  .d-md-flex .btn {
-    width: auto;
-    margin-bottom: 0;
-  }
+/*  Responsividade  */
+.table-responsive {
+  border-radius: var(--border-radius);
+  overflow-x: auto;
+  box-shadow: var(--shadow-md);
+  margin-bottom: 2rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  -webkit-overflow-scrolling: touch;
 }
 
-/* Smartphones */
-@media (max-width: 576px) {
-  body {
-    padding: 0.5rem;
-  }
+.table {
+  margin-bottom: 0;
+  font-size: 0.9rem;
+  min-width: 600px;
+  width: 100%;
+  border-collapse: collapse;
+}
 
-  .container-fluid {
-    padding: 1rem;
-  }
+.table th {
+  background: linear-gradient(
+    135deg,
+    var(--lighter-bg) 0%,
+    var(--light-bg) 100%
+  );
+  color: var(--text-primary);
+  font-weight: 600;
+  padding: 1rem 0.75rem;
+  text-align: center;
+  border: none;
+  border-bottom: 2px solid var(--primary-color);
+  white-space: nowrap;
+}
 
-  header {
-    padding: 1.5rem;
-  }
+.table th i {
+  color: var(--primary-color);
+  margin-right: 0.25rem;
+}
 
-  header h1 {
-    font-size: 1.75rem;
-  }
+.table td {
+  padding: 1rem 0.75rem;
+  vertical-align: middle;
+  text-align: center;
+  border-bottom: 1px solid var(--border-color);
+  transition: var(--transition);
+  color: var(--text-primary);
+  /* white-space: nowrap; */
+}
 
-  header .lead {
-    font-size: 1rem;
-  }
+.table tbody tr:hover {
+  background: var(--light-bg);
+  transform: scale(1.01);
+}
 
-  #qr-reader {
-    min-height: 200px;
-  }
+.table .badge {
+  font-size: 0.8rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 2rem;
+  font-weight: 600;
+}
 
+/* Layout em blocos para telas menores */
+@media (max-width: 768px) {
   .table-responsive {
     font-size: 0.8rem;
   }
 
-  /* Tabela responsiva para mobile */
+  .table {
+    min-width: unset;
+    width: 100%;
+  }
+
   .table thead {
     display: none;
   }
@@ -1002,11 +1019,14 @@ footer i {
   }
 
   .table td {
-    text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
     padding: 0.5rem 0;
-    position: relative;
     border: none;
     border-bottom: 1px solid var(--border-light);
+    word-break: break-word;
   }
 
   .table td:last-child {
@@ -1015,13 +1035,10 @@ footer i {
 
   .table td:before {
     content: attr(data-label);
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
     font-weight: 600;
     color: var(--text-primary);
-    width: 45%;
+    margin-bottom: 0.25rem;
+    font-size: 0.75rem;
   }
 
   .action-cell {
@@ -1034,19 +1051,28 @@ footer i {
   .action-cell:before {
     display: none;
   }
+}
 
-  /* Gerador QR Code mobile */
-  .qr-generator {
-    padding: 1rem;
-    margin: 1rem auto;
+@media (max-width: 425px) {
+  header h1 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .table td,
+  .table td:before {
+    font-size: 0.75rem;
   }
 
-  #qr-text {
-    font-size: 16px; /* Evita zoom no iOS */
+  .table td {
+    padding: 0.5rem;
   }
 
-  .form-control {
-    font-size: 16px; /* Evita zoom no iOS */
+  .table td:before {
+    font-size: 0.7rem;
+  }
+
+  .table-responsive {
+    padding: 0.5rem;
   }
 }
 
