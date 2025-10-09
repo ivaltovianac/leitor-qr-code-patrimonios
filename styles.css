@@ -7,7 +7,7 @@
 
   /* Cores secundárias e de apoio */
   --secondary-color: #3a327c; /* Cinza azulado equilibrado */
-  --success-color: #38726C; /* Verde sucesso vibrante */
+  --success-color: #38726c; /* Verde sucesso vibrante */
   --danger-color: #e74c3c; /* Vermelho alerta */
   --warning-color: #f39c12; /* Amarelo dourado */
   --info-color: #3498db; /* Azul informativo */
@@ -730,8 +730,7 @@ footer i {
   border-radius: 0 var(--border-radius-sm) var(--border-radius-sm) 0;
 }
 
-Animações */
-.fade-in {
+Animações */ .fade-in {
   animation: fadeIn 0.5s ease-out;
 }
 

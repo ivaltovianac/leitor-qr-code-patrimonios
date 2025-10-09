@@ -23,8 +23,8 @@
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
 
-    <!-- Html5Qrcode -->
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <!-- jsQR -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.0.0/dist/jsQR.min.js"></script>
 
     <!-- jsPDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -66,7 +66,12 @@
                     <div class="card-body">
                         <!-- Área de visualização da câmera -->
                         <div id="qr-reader" class="mb-3">
-                            <div class="text-center text-white p-4">
+                            <!-- Elementos para jsQR -->
+                            <video id="video" playsinline style="width: 100%; height: auto; display: none;"></video>
+                            <canvas id="canvas" style="width: 100%; height: auto; display: none;"></canvas>
+
+                            <!-- Mensagem inicial -->
+                            <div id="initialMessage" class="text-center text-white p-4">
                                 <i class="bi bi-camera-video" style="font-size: 3rem; opacity: 0.7;"></i>
                                 <p class="mt-2 mb-0">Clique em "Iniciar Scanner" para ativar a câmera</p>
                             </div>
@@ -283,7 +288,7 @@
 
                                 <div class="col-12">
                                     <label for="editCoordenador" class="form-label required">
-                                        <i class="bi bi-person-badge"></i> Coordenador
+                                        <i class="bi bi-person"></i> Coordenador
                                     </label>
                                     <input type="text" class="form-control" id="editCoordenador" required>
                                 </div>
